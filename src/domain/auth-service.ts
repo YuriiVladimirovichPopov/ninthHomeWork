@@ -101,11 +101,11 @@ export const authService = {
             return !!userByToken
     },
 
-    async refreshTokens(userId: string): Promise<{ accessToken: string, newRefreshToken: string }> {
+    async refreshTokens(userId: string, deviceId: string): Promise<{ accessToken: string, newRefreshToken: string }> {
         try {
           const accessToken = Jwt.sign({ userId }, settings.accessTokenSecret1 , { expiresIn: '10s' });
 
-          const newRefreshToken = Jwt.sign({ userId }, settings.refreshTokenSecret2, { expiresIn: '20s' });
+          const newRefreshToken = Jwt.sign({ userId, deviceId }, settings.refreshTokenSecret2, { expiresIn: '20s' });
       
           return { accessToken, newRefreshToken };
         } catch (error) {

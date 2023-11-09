@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken"
 import {  settings } from "../settings";
 import { UsersMongoDbType } from '../types';
+import { ObjectId } from "mongodb";
 
 export const jwtService =  {
     async createJWT(user: UsersMongoDbType) {
@@ -17,8 +18,13 @@ export const jwtService =  {
         }
     },
     //todo, may be finished!
-    async createRefreshToken(user: UsersMongoDbType) {
-        const refToken = jwt.sign({userId: user._id}, settings.refreshTokenSecret2, {expiresIn: '20sec'})  
+    async createRefreshToken(userId: ObjectId, deviceId: string) {
+        const refToken = jwt.sign({userId, deviceId}, settings.refreshTokenSecret2, {expiresIn: '20sec'})  
         return refToken;
+    },
+
+    async getLastActiveDate(token: string) {
+        const result: any = jwt.decode(token)
+        return new Date(result.iat * 1000).toISOString()
     }
 }

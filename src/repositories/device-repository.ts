@@ -1,6 +1,7 @@
 import { DeviceViewModel } from '../models/devices/deviceViewModel';
 import { DeviceMongoDbType } from '../types';
 import { deviceCollection } from '../db/db';
+import { ObjectId } from 'mongodb';
 
 
 export const deviceRepository = {
@@ -15,7 +16,7 @@ export const deviceRepository = {
         }
     },
 
-    async getAllDevicesByUser(userId: string): Promise<DeviceMongoDbType[]> {
+    async getAllDevicesByUser(userId: ObjectId): Promise<DeviceMongoDbType[]> {
         try {
             const devices = await deviceCollection.find ({ userId }, {projection: {_id: 0, userId: 0}}).toArray();
             return devices 
@@ -41,7 +42,7 @@ export const deviceRepository = {
         
     },
 
-    async deleteAllDevicesExceptCurrent(userId: string, deviceId: string): Promise<boolean> {
+    async deleteAllDevicesExceptCurrent(userId: ObjectId, deviceId: string): Promise<boolean> {
         try {
             await deviceCollection.deleteMany({ userId, deviceId: {$ne: deviceId} })
             return true

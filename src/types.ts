@@ -59,7 +59,7 @@ import { EmailConfirmationType, UserViewModel } from './models/users/userViewMod
     title: string,
     lastActiveDate: string,
     deviceId: string,
-    userId: string
+    userId: ObjectId
   }
 
   export type RateLimitMongoDbType = {

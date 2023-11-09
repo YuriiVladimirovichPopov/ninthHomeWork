@@ -1,6 +1,6 @@
 import { Response, Request, Router } from "express";
 import { sendStatus } from './send-status';
-import { RequestWithBody, RequestWithUser, UsersMongoDbType } from '../types';
+import { DeviceMongoDbType, RequestWithBody, RequestWithUser, UsersMongoDbType } from '../types';
 import { jwtService } from "../application/jwt-service";
 import { authMiddleware } from '../middlewares/validations/auth.validation';
 import { UserViewModel } from '../models/users/userViewModel';
@@ -12,28 +12,42 @@ import { authService } from "../domain/auth-service";
 import { validateCode } from "../middlewares/validations/code.validation";
 import { emailConfValidation } from "../middlewares/validations/emailConf.validation";
 import { emailManager } from "../managers/email-manager";
-import { usersCollection } from "../db/db";
+import { usersCollection, deviceCollection } from '../db/db';
 import { randomUUID } from 'crypto';
 import { add } from "date-fns";
 import { error } from 'console';
 import { ObjectId } from 'mongodb';
 import { createUserValidation } from "../middlewares/validations/users.validation";
+import { customRateLimit } from "../middlewares/rateLimit-middleware";
+import { deviceRepository } from '../repositories/device-repository';
 
 
 export const authRouter = Router ({})
 
-authRouter.post('/login', async(req: Request, res: Response) => {
+authRouter.post('/login', customRateLimit, async(req: Request, res: Response) => {
+    
     const user = await authService.checkCredentials(req.body.loginOrEmail, req.body.password)
         if (user) {
-    const token = await jwtService.createJWT(user)
-    
-    const refreshToken = await jwtService.createRefreshToken(user)
-        res.cookie('refreshToken', refreshToken, {httpOnly: true, secure: true})   
-        .status(sendStatus.OK_200).send({accessToken: token})
-        return
-    } else {
-        return res.sendStatus(sendStatus.UNAUTHORIZED_401)
-    }
+            const deviceId = randomUUID();
+            const userId = user._id;
+            const accessToken = await jwtService.createJWT(user)
+            const refreshToken = await jwtService.createRefreshToken(userId, deviceId)
+            const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)
+            const newDevice: DeviceMongoDbType = {
+                _id: new ObjectId(),
+                ip: req.ip,
+                title: req.body.title,
+                lastActiveDate,
+                deviceId,
+                userId,
+            }
+            await deviceCollection.insertOne(newDevice)
+            res.cookie('refreshToken', refreshToken, {httpOnly: true, secure: true})   
+            .status(sendStatus.OK_200).send({accessToken: accessToken})
+            return
+        } else {
+            return res.sendStatus(sendStatus.UNAUTHORIZED_401)
+        }
 })
 
 authRouter.get('/me', authMiddleware, async(req: RequestWithUser<UserViewModel>, res: Response) => {    
@@ -129,9 +143,19 @@ authRouter.post('/refresh-token', async (req: Request, res: Response) => {
         const validToken = await  authService.findTokenInBlackList(user.id, refreshToken);
             if(validToken) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Token'}) 
 
-        const tokens = await authService.refreshTokens(user.id);
+        const device = await deviceCollection.findOne({ deviceId: isValid.deviceId })
+            if(!device) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'No device'})
+        
+        const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)
+            if (lastActiveDate !== device.lastActiveDate) 
+                return res.status(sendStatus.UNAUTHORIZED_401).send({message: 'Invalid refresh token version'})
 
-        await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } })
+        const tokens = await authService.refreshTokens(user.id, device.deviceId)
+
+        const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken) 
+        await deviceCollection.updateOne({deviceId: device.deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
+
+        //await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } })
             res.cookie('refreshToken', tokens.newRefreshToken, {httpOnly: true, secure: true})
                 return res.status(sendStatus.OK_200).send({ accessToken: tokens.accessToken })
 
@@ -151,10 +175,18 @@ authRouter.post('/logout', async (req: Request, res: Response) => {
         const user = await usersRepository.findUserById(isValid.userId);
             if(!user) return res.sendStatus(sendStatus.UNAUTHORIZED_401);
 
-        const validToken = await  authService.findTokenInBlackList(user.id, refreshToken); //userId
+        const validToken = await  authService.findTokenInBlackList(user.id, refreshToken); 
             if(validToken)return res.sendStatus(sendStatus.UNAUTHORIZED_401); 
+
+        const device = await deviceCollection.findOne({ deviceId: isValid.deviceId })
+            if(!device) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Invalid refresh token' })
+
+        const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)
+            if (lastActiveDate !== device.lastActiveDate) 
+                return res.status(sendStatus.UNAUTHORIZED_401).send({message: 'Invalid refresh token'})
     
-    await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } });
+        await deviceRepository.deleteDeviceById(isValid.deviceId)
+    //await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } });
         
             res.clearCookie('refreshToken', { httpOnly: true, secure: true });
             res.sendStatus(sendStatus.NO_CONTENT_204);
