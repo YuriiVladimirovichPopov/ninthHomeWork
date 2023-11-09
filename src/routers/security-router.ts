@@ -28,7 +28,7 @@ securityRouter.get('/devices',async (req: Request, res: Response) => {
     } 
 
     if (isValid.userId !== device.userId) {
-      return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Unathorized acsess to device"})
+      return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Unathorized access to device"})
     }
 
   const result = await deviceRepository.getAllDevicesByUser(isValid.deviceId)
