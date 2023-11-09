@@ -63,7 +63,7 @@ authRouter.get('/me', authMiddleware, async(req: RequestWithUser<UserViewModel>,
     }
 })
 
-authRouter.post('/registration-confirmation', validateCode, async(req: RequestWithBody<CodeType>, res: Response) => {
+authRouter.post('/registration-confirmation', customRateLimit, validateCode, async(req: RequestWithBody<CodeType>, res: Response) => {
     const currentDate = new Date()
     
     const user = await usersRepository.findUserByConfirmationCode(req.body.code)
@@ -87,7 +87,7 @@ authRouter.post('/registration-confirmation', validateCode, async(req: RequestWi
         return res.sendStatus(sendStatus.NO_CONTENT_204)
 })
 
-authRouter.post('/registration', createUserValidation, 
+authRouter.post('/registration', customRateLimit, createUserValidation, 
 
     async(req: RequestWithBody<UserInputModel>, res: Response) => {
         
@@ -100,7 +100,7 @@ authRouter.post('/registration', createUserValidation,
     }
 })
 
-authRouter.post('/registration-email-resending', emailConfValidation, 
+authRouter.post('/registration-email-resending', customRateLimit, emailConfValidation, 
     async(req: RequestWithBody<UsersMongoDbType>, res: Response) => {
     
     const user = await usersRepository.findUserByEmail(req.body.email)
@@ -155,7 +155,7 @@ authRouter.post('/refresh-token', async (req: Request, res: Response) => {
         const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken) 
         await deviceCollection.updateOne({deviceId: device.deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
 
-        //await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } })
+        await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } })
             res.cookie('refreshToken', tokens.newRefreshToken, {httpOnly: true, secure: true})
                 return res.status(sendStatus.OK_200).send({ accessToken: tokens.accessToken })
 
@@ -186,7 +186,7 @@ authRouter.post('/logout', async (req: Request, res: Response) => {
                 return res.status(sendStatus.UNAUTHORIZED_401).send({message: 'Invalid refresh token'})
     
         await deviceRepository.deleteDeviceById(isValid.deviceId)
-    //await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } });
+    await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } });
         
             res.clearCookie('refreshToken', { httpOnly: true, secure: true });
             res.sendStatus(sendStatus.NO_CONTENT_204);

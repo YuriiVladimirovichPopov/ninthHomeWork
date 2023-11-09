@@ -3,7 +3,6 @@ import { sendStatus } from "./send-status";
 import { authService } from '../domain/auth-service';
 import { usersRepository } from '../repositories/users-repository';
 import { deviceRepository } from '../repositories/device-repository';
-import { DeviceViewModel } from '../models/devices/deviceViewModel';
 
 export const securityRouter = Router({})
 
