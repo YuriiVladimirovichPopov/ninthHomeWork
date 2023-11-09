@@ -54,7 +54,7 @@ securityRouter.delete('/devices',async (req: Request, res: Response) => {
   }
 })
 
-securityRouter.delete('/devices/{deviceId}',async (req: Request, res: Response) => {
+securityRouter.delete('/devices/:deviceId',async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken
   const deviceId = req.params.deviceId
   const isValid = await authService.validateRefreshToken(refreshToken)
