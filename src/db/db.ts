@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import { BlogsMongoDbType, PostsMongoDbType, UsersMongoDbType, CommentsMongoDbType } from '../types';
+import { BlogsMongoDbType, PostsMongoDbType, UsersMongoDbType, CommentsMongoDbType, DeviceMongoDbType, RateLimitMongoDbType } from '../types';
 import { Auth, MongoClient } from 'mongodb'
 import { AuthViewModel } from '../models/auth';
 
@@ -27,6 +27,8 @@ export const authCollection = client.db().collection<AuthViewModel>('auth')
 export const tokenCollection = client.db().collection<AuthViewModel>('token')
 
 export const deviceCollection = client.db().collection<DeviceMongoDbType>('device')
+
+export const rateLimitCollection = client.db().collection<RateLimitMongoDbType>('rateLimit')
 
 export const  runDb = async () => {
   try {

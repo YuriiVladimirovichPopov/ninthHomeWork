@@ -53,6 +53,21 @@ import { EmailConfirmationType, UserViewModel } from './models/users/userViewMod
     createdAt: string
   }
 
+  export type DeviceMongoDbType = {
+    _id: ObjectId,
+    ip: string,
+    title: string,
+    lastActiveDate: string,
+    deviceId: string,
+    userId: string
+  }
+
+  export type RateLimitMongoDbType = {
+    IP: string,
+    URL: string,
+    date: string
+  }
+
   export type RegistrationDataType = {
     ip: string
   }
