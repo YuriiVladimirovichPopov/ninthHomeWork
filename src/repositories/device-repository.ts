@@ -49,5 +49,14 @@ export const deviceRepository = {
         } catch (error) {
         throw new Error("Failed to refresh tokens")
         }
+    },
+     // new function for testing all data
+    async deleteAllDevices(): Promise<boolean> {
+        try {
+            const result = await deviceCollection.deleteMany({});
+            return result.acknowledged === true
+        } catch (error) {
+            return false
+        }
     }
 }

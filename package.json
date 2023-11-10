@@ -11,7 +11,7 @@
     "jest": "jest -i",
     "test": "jest -i --runInBand --detectOpenHandles --forceExit --passWithNoTests",
     "test:coverage": "jest --runInBand --coverage",
-    "serveo": "ssh -R 80:localhost:3009 serveo.net"
+    "serveo": "ssh -R 80:localhost:3010 serveo.net"
   },
   "dependencies": {
     "@types/date-fns": "^2.6.0",

@@ -18,13 +18,13 @@ securityRouter.get('/devices',async (req: Request, res: Response) => {
     return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Invalid refresh token"})
   }
 
- const user = await usersRepository.findUserById(isValid.userId)
+ const user = await usersRepository.findUserById(isValid.userId  )
   if (!user) {
     return res.status(sendStatus.UNAUTHORIZED_401).send({message: "User not found"})
   }
   
   const device = await deviceRepository.findDeviceByUser(isValid.deviceId)
-  console.log(device, "devices found")
+  //console.log(device, "devices found!")
     if (!device || device.lastActiveDate !== await jwtService.getLastActiveDate(refreshToken)) { //
       return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Device not found"})
     } 
