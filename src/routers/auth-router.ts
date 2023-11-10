@@ -36,10 +36,10 @@ authRouter.post('/login', customRateLimit, async(req: Request, res: Response) =>
             const newDevice: DeviceMongoDbType = {
                 _id: new ObjectId(),
                 ip: req.ip,
-                title: req.body.title,
+                title: req.headers['user-agent'] || 'title' ,
                 lastActiveDate,
                 deviceId,
-                userId,
+                userId
             }
             await deviceCollection.insertOne(newDevice)
             res.cookie('refreshToken', refreshToken, {httpOnly: true, secure: true})   
