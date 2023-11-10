@@ -3,6 +3,7 @@ import { sendStatus } from "./send-status";
 import { authService } from '../domain/auth-service';
 import { usersRepository } from '../repositories/users-repository';
 import { deviceRepository } from '../repositories/device-repository';
+import { jwtService } from '../application/jwt-service';
 
 export const securityRouter = Router({})
 
@@ -23,10 +24,11 @@ securityRouter.get('/devices',async (req: Request, res: Response) => {
   }
   
   const device = await deviceRepository.findDeviceByUser(isValid.deviceId)
-    if (!device) {
+  console.log(device, "devices found")
+    if (!device || device.lastActiveDate !== await jwtService.getLastActiveDate(refreshToken)) { //
       return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Device not found"})
     } 
-
+// тут валится
     if (isValid.userId !== device.userId) {
       return res.status(sendStatus.UNAUTHORIZED_401).send({message: "Unathorized access to device"})
     }
