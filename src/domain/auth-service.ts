@@ -70,7 +70,7 @@ export const authService = {
     async checkAndFindUserByToken(token: string) {
         try {
             const result: any = Jwt.verify(token, settings.JWT_SECRET)
-            const user  = await usersRepository.findUserById(new ObjectId(result.userId))
+            const user  = await usersRepository.findUserById(result.userId)
                 return user
         } catch (error) {
             return null
