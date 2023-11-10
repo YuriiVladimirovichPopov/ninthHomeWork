@@ -13,6 +13,6 @@ testingRouter.delete('/all-data', (req: Request, res: Response) => {
     postsRepository.deleteAllPosts()
     usersRepository.deleteAllUsers()
     commentsRepository.deleteAllComment()
-    //deviceRepository.deleteAllDevicesExceptCurrent()
+    deviceRepository.deleteAllDevices()
     res.status(sendStatus.NO_CONTENT_204).send('All data is deleted')
 })
