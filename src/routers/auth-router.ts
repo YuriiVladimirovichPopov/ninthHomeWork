@@ -29,7 +29,7 @@ authRouter.post('/login', customRateLimit, async(req: Request, res: Response) =>
     const user = await authService.checkCredentials(req.body.loginOrEmail, req.body.password)
         if (user) {
             const deviceId = randomUUID();
-            const userId = user._id;
+            const userId = user._id.toString();
             const accessToken = await jwtService.createJWT(user)
             const refreshToken = await jwtService.createRefreshToken(userId, deviceId)
             const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)

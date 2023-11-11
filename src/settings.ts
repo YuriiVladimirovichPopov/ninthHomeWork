@@ -25,6 +25,8 @@ export const settings = {
 
 app.use(cookieParser())
 
+app.set('trust proxy', true)
+
 app.use('/blogs', blogsRouter)
 
 app.use('/posts', postsRouter)
