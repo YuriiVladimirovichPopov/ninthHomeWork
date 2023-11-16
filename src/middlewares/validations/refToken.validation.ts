@@ -35,6 +35,6 @@ export async function refTokenMiddleware (req: Request, res: Response, next: Nex
     next()
 } catch (err) {
     console.log(err)
-    res.sendStatus(sendStatus.INTERNAL_SERVER_ERROR_500)
+    return res.sendStatus(sendStatus.INTERNAL_SERVER_ERROR_500)
 }
 }

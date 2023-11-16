@@ -142,7 +142,7 @@ authRouter.post('/refresh-token',refTokenMiddleware, async (req: Request, res: R
 
         const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken) 
         await deviceCollection.updateOne({deviceId: deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
-
+            return res.sendStatus(sendStatus.OK_200)
     } catch(error) {
         return res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({ message: 'Server error'})
     }
@@ -155,7 +155,7 @@ authRouter.post('/logout', refTokenMiddleware, async (req: Request, res: Respons
     try {
         await deviceRepository.deleteDeviceById(userId, deviceId) 
             res.clearCookie('refreshToken', { httpOnly: true, secure: true });
-            res.sendStatus(sendStatus.NO_CONTENT_204);
+            return res.sendStatus(sendStatus.NO_CONTENT_204);
     } catch (error) {
         console.error(error)
         return res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({ message: 'Server error'})
