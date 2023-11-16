@@ -11,61 +11,86 @@ import { emailAdapter } from "../adapters/email-adapter";
 import { randomUUID } from "crypto";
 import { access } from "fs";
 
-// const getRequest = () => {
-//     return request(app)
-//     }
-// const mockUsersRepository = {
-//     findUserByEmail: jest.fn(),
-//     };
-// const mockEmailManager = {
-//     sendEmail: jest.fn(),
-//     };
-// let db: Db
 
-// const mockUser = {
-//     mockUserId: new ObjectId(),
-//     login: 'leva',
-//     email:'papanchik87@yahoo.com',
-//     password: '987654321',
-//     emailConfirmation: {
-//         confirmationCode: randomUUID(),
-//         expirationDate: new Date(),
-//         isConfirmed: false,
-//       }
-// }
+const getRequest = () => {
+    return request(app)
+    }
+let db: Db
+
+const sleep = (seconds: number) => new Promise((r) => setTimeout(r, seconds * 1000));
+
+describe('tests for /auth', () => {
+    beforeAll(async () => {
+        await client.close()
+        const connection = await client.connect()
+        db = connection.db()
+        await getRequest()
+        .delete('/testing/all-data')
+        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
+
+    })
+      
+    afterAll(async () => {
+        await client.close()
+    })
+
+    const endpoints = ['/auth/registration', 
+    '/auth/login', '/auth/registration-email-resending', '/auth/registration-confirmation']
+
+    it('should return 429 status code', async () => {
+        for (const endpoint of endpoints) {
+            for (let i = 0; i <= 5; i++) {
+                console.log(endpoint);
+                console.log(i);
+                const res = await getRequest().post(endpoint).send()
+                if(i === 5) {
+                    expect(res.status).toBe(sendStatus.TOO_MANY_REQUESTS_429)    
+                    await sleep(10.5)
+                    const res2 = await getRequest().post(endpoint).send()
+                    expect(res2.status).not.toBe(sendStatus.TOO_MANY_REQUESTS_429)  
+                } else {
+                    expect(res.status).not.toBe(sendStatus.TOO_MANY_REQUESTS_429)       
+                }
+            }
+        }
+    })
+})
+
+const mockUsersRepository = {
+    findUserByEmail: jest.fn(),
+    };
+const mockEmailManager = {
+    sendEmail: jest.fn(),
+    };
+
+const mockUser = {
+    mockUserId: new ObjectId(),
+    login: 'leva',
+    email:'papanchik87@yahoo.com',
+    password: '987654321',
+    emailConfirmation: {
+        confirmationCode: randomUUID(),
+        expirationDate: new Date(),
+        isConfirmed: false,
+      }
+}
 
 // let accessToken: string
 
-
-// describe('tests for /auth', () => {
-//     beforeAll(async () => {
-//         await client.close()
-//         const connection = await client.connect()
-//         db = connection.db()
-//         await getRequest()
-//         .delete('/testing/all-data')
-//         .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-
-//     })
-      
-//     afterAll(async () => {
-//         await client.close()
-//     })
-
 // // пзц какой-то! требуется рефакторинг
-//     it (`"auth/registration": 
-//         should create new user and send confirmation email with code`, async () => {
-//         const mockUserik = {
-//             login: mockUser.login,
-//             email: mockUser.email,
-//             password: mockUser.password
-//         }
+    it (`"auth/registration": 
+        should create new user and send confirmation email with code`, async () => {
+        const mockUserik = {
+            login: mockUser.login,
+            email: mockUser.email,
+            password: mockUser.password
+        }
 
-//         await getRequest()
-//         .post(`/auth/registration`)
-//         .send(mockUserik)
-//         .expect(sendStatus.NO_CONTENT_204) 
-//     })
+        await getRequest()
+        .post(`/auth/registration`)
+        .send(mockUserik)
+        .expect(sendStatus.NO_CONTENT_204) 
+    })
 
 //     it (`"auth/registration": 
 //         should return error if email or login already exist`, async () => {
@@ -83,21 +108,20 @@ import { access } from "fs";
 //         .expect(sendStatus.BAD_REQUEST_400)
 //     })
 
-//     it (`"auth/registration-email-resending":
-//         should send email with new code if user exists but not confirmed yet;
-//         status 204;`, async () => {
+    it (`"auth/registration-email-resending":
+        should send email with new code if user exists but not confirmed yet;
+        status 204;`, async () => {
             
-//             emailAdapter.sendEmail = jest.fn(); 
-//             const sendEmailConfirmation = jest.spyOn(emailAdapter, 'sendEmail')  
-//            // mockUsersRepository.findUserByEmail.mockResolvedValue(mockUser)
-//         await getRequest()
-//         .post(`/auth/registration-email-resending`)
-//         .send(mockUser.email)
-//         .expect(sendStatus.NO_CONTENT_204)
-//         //expect(mockUsersRepository.findUserByEmail).toHaveBeenCalledWith(mockUser.email)
-//         expect(sendEmailConfirmation).toHaveBeenCalledWith(mockUser.email, expect.any(String))
-
-//     })
+            emailAdapter.sendEmail = jest.fn(); 
+            const sendEmailConfirmation = jest.spyOn(emailAdapter, 'sendEmail')  
+            mockUsersRepository.findUserByEmail.mockResolvedValue(mockUser)
+        await getRequest()
+        .post(`/auth/registration-email-resending`)
+        .send(mockUser.email)
+        .expect(sendStatus.NO_CONTENT_204)
+        //expect(mockUsersRepository.findUserByEmail).toHaveBeenCalledWith(mockUser.email)
+        expect(sendEmailConfirmation).toHaveBeenCalledWith(mockUser.email, expect.any(String))
+    })
 
 //     it (`"auth/registration-confirmation":
 //         should confirm registration by email; 
@@ -207,48 +231,3 @@ import { access } from "fs";
 //     })
 // })
 
-const getRequest = () => {
-    return request(app)
-    }
-let db: Db
-
-const sleep = (seconds: number) => new Promise((r) => setTimeout(r, seconds * 1000));
-
-describe('tests for /auth', () => {
-    beforeAll(async () => {
-        await client.close()
-        const connection = await client.connect()
-        db = connection.db()
-        await getRequest()
-        .delete('/testing/all-data')
-        .set('Authorization', 'Basic YWRtaW46cXdlcnR5')
-
-    })
-      
-    afterAll(async () => {
-        await client.close()
-    })
-
-    const endpoints = ['/auth/registration', 
-    '/auth/login', '/auth/registration-email-resending', '/auth/registration-confirmation']
-
-    it('should return 429 status code', async () => {
-        for (const endpoint of endpoints) {
-            for (let i = 0; i <= 5; i++) {
-                console.log(endpoint);
-                console.log(i);
-                const res = await getRequest().post(endpoint).send()
-                if(i === 5) {
-                    expect(res.status).toBe(sendStatus.TOO_MANY_REQUESTS_429)    
-                    await sleep(10.5)
-                    const res2 = await getRequest().post(endpoint).send()
-                    expect(res2.status).not.toBe(sendStatus.TOO_MANY_REQUESTS_429)  
-                } else {
-                    expect(res.status).not.toBe(sendStatus.TOO_MANY_REQUESTS_429)       
-                }
-            }
-            
-        }
-    })
-
-})

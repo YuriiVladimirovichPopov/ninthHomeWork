@@ -27,9 +27,9 @@ export const deviceRepository = {
 
     },
 
-    async deleteDeviceById(deviceId: string): Promise<boolean> {
+    async deleteDeviceById(user: string, deviceId: string): Promise<boolean> {
         try {
-            const result = await deviceCollection.deleteOne({ deviceId })
+            const result = await deviceCollection.deleteOne({ user, deviceId })
             if (result.deletedCount === 1) {
                 return true
             } else {

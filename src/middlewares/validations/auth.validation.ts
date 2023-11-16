@@ -16,7 +16,7 @@ const typeAuth = req.headers.authorization.split(' ')[0]
 const token = req.headers.authorization.split(' ')[1]
 
 const userId = await jwtService.getUserIdByToken(token)
-console.log('token', token) //
+console.log('token', token) 
     if (!userId) {
         return res.sendStatus(sendStatus.UNAUTHORIZED_401) 
     }
@@ -34,7 +34,8 @@ const mappedUser: UserViewModel = {
     login: user.login,
     email: user.email,
     createdAt: user.createdAt,
-    emailConfirmation: user.emailConfirmation  
+    emailConfirmation: user.emailConfirmation,
+     
 }
     req.user = mappedUser
     

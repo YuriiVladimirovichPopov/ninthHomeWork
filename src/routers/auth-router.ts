@@ -7,7 +7,6 @@ import { UserViewModel } from '../models/users/userViewModel';
 import { UserInputModel } from "../models/users/userInputModel";
 import { usersRepository } from "../repositories/users-repository";
 import { CodeType } from "../models/code";
-
 import { authService } from "../domain/auth-service";
 import { validateCode } from "../middlewares/validations/code.validation";
 import { emailConfValidation } from "../middlewares/validations/emailConf.validation";
@@ -20,6 +19,7 @@ import { ObjectId } from 'mongodb';
 import { createUserValidation } from "../middlewares/validations/users.validation";
 import { customRateLimit } from "../middlewares/rateLimit-middleware";
 import { deviceRepository } from '../repositories/device-repository';
+import { refTokenMiddleware } from "../middlewares/validations/refToken.validation";
 
 
 export const authRouter = Router ({})
@@ -69,16 +69,20 @@ authRouter.post('/registration-confirmation', customRateLimit, validateCode, asy
     const user = await usersRepository.findUserByConfirmationCode(req.body.code)
     
     if(!user) {
-        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: [{ message: 'User not found by this code', field: "code" }] })
+        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: 
+            [{ message: 'User not found by this code', field: "code" }] })
     } 
     if (user.emailConfirmation.isConfirmed) {
-        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: [{ message: 'Email is confirmed', field: "code" }] })
+        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: 
+            [{ message: 'Email is confirmed', field: "code" }] })
     }
     if (user.emailConfirmation.expirationDate < currentDate ) {
-        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: [{ message: 'The code is exparied', field: "code" }] })
+        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: 
+            [{ message: 'The code is exparied', field: "code" }] })
     }
     if (user.emailConfirmation.confirmationCode !== req.body.code) {  
-        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: [{ message: 'Invalid code', field: "code" }] })
+        return res.status(sendStatus.BAD_REQUEST_400).send({ errorsMessages: 
+            [{ message: 'Invalid code', field: "code" }] })
     }
    
     await authService.updateConfirmEmailByUser(user._id.toString())
@@ -129,65 +133,27 @@ authRouter.post('/registration-email-resending', customRateLimit, emailConfValid
         return res.sendStatus(sendStatus.NO_CONTENT_204)
 })
 
-authRouter.post('/refresh-token', async (req: Request, res: Response) => {
-    try {
-        const refreshToken = req.cookies.refreshToken
-            if (!refreshToken) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Refresh token not found' })
+authRouter.post('/refresh-token',refTokenMiddleware, async (req: Request, res: Response) => {
+    const deviceId = req.deviceId!
+    const userId = req.user!.id
     
-        const isValid = await authService.validateRefreshToken(refreshToken);
-            if (!isValid) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Invalid refresh token' });
-
-        const user = await usersRepository.findUserById(isValid.userId);
-            if(!user) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'User not found', isValid: isValid});
-
-        const validToken = await  authService.findTokenInBlackList(user.id, refreshToken);
-            if(validToken) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Token'}) 
-
-        const device = await deviceCollection.findOne({ deviceId: isValid.deviceId })
-            if(!device) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'No device'})
-        
-        const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)
-            if (lastActiveDate !== device.lastActiveDate) 
-                return res.status(sendStatus.UNAUTHORIZED_401).send({message: 'Invalid refresh token version'})
-
-        const tokens = await authService.refreshTokens(user.id, device.deviceId)
+    try {
+        const tokens = await authService.refreshTokens(userId, deviceId)
 
         const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken) 
-        await deviceCollection.updateOne({deviceId: device.deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
-
-        await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } })
-            res.cookie('refreshToken', tokens.newRefreshToken, {httpOnly: true, secure: true})
-                return res.status(sendStatus.OK_200).send({ accessToken: tokens.accessToken })
+        await deviceCollection.updateOne({deviceId: deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
 
     } catch(error) {
         return res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({ message: 'Server error'})
     }
 })
 
-authRouter.post('/logout', async (req: Request, res: Response) => {
-    try {
-        const refreshToken = req.cookies.refreshToken    
-           if (!refreshToken) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Refresh token not found' });
-      
-        const isValid = await authService.validateRefreshToken(refreshToken);    //вынести в мидлевару
-            if (!isValid) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Invalid refresh token' });
-            
-        const user = await usersRepository.findUserById(isValid.userId);
-            if(!user) return res.sendStatus(sendStatus.UNAUTHORIZED_401);
-
-        const validToken = await  authService.findTokenInBlackList(user.id, refreshToken); 
-            if(validToken)return res.sendStatus(sendStatus.UNAUTHORIZED_401); 
-
-        const device = await deviceCollection.findOne({ deviceId: isValid.deviceId })
-            if(!device) return res.status(sendStatus.UNAUTHORIZED_401).send({ message: 'Invalid refresh token' })
-
-        const lastActiveDate = await jwtService.getLastActiveDate(refreshToken)
-            if (lastActiveDate !== device.lastActiveDate) 
-                return res.status(sendStatus.UNAUTHORIZED_401).send({message: 'Invalid refresh token'})
+authRouter.post('/logout', refTokenMiddleware, async (req: Request, res: Response) => {
+    const deviceId = req.deviceId!
+    const userId = req.user!.id
     
-        await deviceRepository.deleteDeviceById(isValid.deviceId)
-    await usersCollection.updateOne({_id: new ObjectId(user.id)}, { $push : { refreshTokenBlackList: refreshToken } });
-        
+    try {
+        await deviceRepository.deleteDeviceById(userId, deviceId) 
             res.clearCookie('refreshToken', { httpOnly: true, secure: true });
             res.sendStatus(sendStatus.NO_CONTENT_204);
     } catch (error) {
