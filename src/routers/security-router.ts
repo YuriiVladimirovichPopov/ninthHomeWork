@@ -30,7 +30,7 @@ securityRouter.get('/devices', async (req: Request, res: Response) => {
     }
 })
 
-securityRouter.delete('/devices',async (req: Request, res: Response) => {
+securityRouter.delete('/devices', async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken
   const isValid = await authService.validateRefreshToken(refreshToken)
     if (!isValid || !isValid.userId || !isValid.deviceId) {
@@ -39,13 +39,13 @@ securityRouter.delete('/devices',async (req: Request, res: Response) => {
   
   const result = await deviceRepository.deleteAllDevicesExceptCurrent(isValid.userId, isValid.deviceId)
     if (result) {
-      res.status(sendStatus.NO_CONTENT_204).send({message: "Device" }) // TODO
+      res.status(sendStatus.NO_CONTENT_204).send({message: "Device" }) 
     } else {
-      res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({message: "Device!"}) // TODO
+      res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({message: "Device!"}) 
   }
 })
 
-securityRouter.delete('/devices/:deviceId',async (req: Request, res: Response) => {
+securityRouter.delete('/devices/:deviceId', async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken
   const deviceId = req.params.deviceId
   const isValid = await authService.validateRefreshToken(refreshToken)

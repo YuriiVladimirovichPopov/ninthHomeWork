@@ -6,7 +6,7 @@ import add from "date-fns/add"
 import { emailManager } from "../managers/email-manager";
 import { settings } from "../settings";
 import  Jwt  from "jsonwebtoken";
-import { usersCollection } from "../db/db";
+import { deviceCollection, usersCollection } from "../db/db";
 import { randomUUID } from "crypto";
 import { UserCreateViewModel } from "../models/users/createUser";
 
@@ -86,6 +86,13 @@ export const authService = {
         const foundUserByEmail = await usersCollection.updateOne({_id: new ObjectId(userId)}, {$set: {"emailConfirmation.isConfirmed": true}})
             return foundUserByEmail.matchedCount === 1 
     },
+
+    async updateRefreshTokenByDeviceId(deviceId: string, newLastActiveDate: string): Promise<boolean> {
+        const refTokenByDeviceId = await deviceCollection.updateOne(
+            { deviceId: deviceId }, 
+            { $set: { lastActiveDate: newLastActiveDate } })
+            return refTokenByDeviceId.matchedCount === 1
+    },
     
     async validateRefreshToken(refreshToken: string): Promise<any>{
         try {
@@ -111,5 +118,30 @@ export const authService = {
         } catch (error) {
           throw new Error('Failed to refresh tokens');
         }
-      }
+    },
+
+    async updateAndFindUserForEmailSend(userId: ObjectId): Promise<UsersMongoDbType | null> {
+        const user = await usersCollection.findOne({ _id: userId });
+    
+        if (user) {
+          if (!user.emailConfirmation.isConfirmed) {
+            const confirmationCode = randomUUID();
+            const expirationDate = add(new Date(), { minutes: 60 });
+    
+            await usersCollection.updateOne(
+              { _id: userId },
+              { $set: {emailConfirmation: {
+                    confirmationCode,
+                    expirationDate,
+                    isConfirmed: false,}}}
+            )
+    
+            const updatedUser = await usersCollection.findOne({ _id: userId });
+    
+            return updatedUser || null;
+          }
+        }
+        return null
+    }
+    
 }

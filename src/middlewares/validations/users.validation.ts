@@ -10,7 +10,6 @@ const loginValidation = body('login')
                                             .withMessage('incorrect login')
                                             .custom(async (login) => {
                                                 const user = await usersRepository.findByLoginOrEmail(login);
-                                                //console.log(login, user, "login and user");
                                                 if (user) {
                                                     throw new Error('User already exists');
                                                 }
@@ -30,18 +29,16 @@ const emailValidation = body('email')
                                             .matches(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)
                                             .withMessage('incorrect email')
                                             .custom(async (email) => {
-                                                //console.log(email, 'email')
                                                 const user = await usersRepository.findByLoginOrEmail(email);
-                                                //console.log(user, 'user')
                                                 if (user) {
                                                     throw new Error('User already exists'); 
                                                 }
                                                 return true;
                                                 })
 
-const loginOrEmailValidation = body('loginOrEmail').isString().trim().isLength({min: 3, max: 30})       //todo
+const loginOrEmailValidation = body('loginOrEmail').isString().trim().isLength({min: 3, max: 30})       
 
 
-export const loginUserValidation = [loginOrEmailValidation, passwordValidation] //TODO
+export const loginUserValidation = [loginOrEmailValidation, passwordValidation] 
 export const createUserValidation = [loginValidation, passwordValidation, emailValidation, inputValidationErrors]
 export const updateUserValidation = [loginValidation, passwordValidation, emailValidation, inputValidationErrors]

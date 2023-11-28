@@ -115,15 +115,8 @@ authRouter.post('/registration-email-resending', customRateLimit, emailConfValid
     if (user.emailConfirmation.isConfirmed) {
         return res.status(sendStatus.BAD_REQUEST_400).send({info: "isConfirmed" })
     }
-
-    await usersCollection.updateOne({_id: user!._id}, {$set: {
-            emailConfirmation: {confirmationCode: randomUUID(),
-                                expirationDate: add(new Date(), {
-                                    minutes: 60
-                                }),
-                                isConfirmed: false}}});
-    
-    const updatedUser = await usersCollection.findOne({_id: user!._id})
+    const userId = req.body._id
+    const updatedUser = await authService.updateAndFindUserForEmailSend(userId)
     
     try {
         await emailManager.sendEmail(updatedUser!.email, updatedUser!.emailConfirmation.confirmationCode)
@@ -133,19 +126,21 @@ authRouter.post('/registration-email-resending', customRateLimit, emailConfValid
         return res.sendStatus(sendStatus.NO_CONTENT_204)
 })
 
-authRouter.post('/refresh-token',refTokenMiddleware, async (req: Request, res: Response) => {
+authRouter.post('/refresh-token', refTokenMiddleware, async (req: Request, res: Response) => {
     const deviceId = req.deviceId!
     const userId = req.user!.id
-    
+
     try {
         const tokens = await authService.refreshTokens(userId, deviceId)
+        const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken)
+        await authService.updateRefreshTokenByDeviceId(deviceId, newLastActiveDate)
 
-        const newLastActiveDate = await jwtService.getLastActiveDate(tokens.newRefreshToken) 
-        await deviceCollection.updateOne({deviceId: deviceId}, {$set: {lastActiveDate: newLastActiveDate}})
-            return res.sendStatus(sendStatus.OK_200)
-    } catch(error) {
-        return res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({ message: 'Server error'})
-    }
+        return res.sendStatus(sendStatus.OK_200)
+    } catch (error) {
+        return res.status(sendStatus.INTERNAL_SERVER_ERROR_500).send({ message: 'Server error' })
+    }/* res.status(HTTP_STATUSES.OK_200)
+    .cookie('refreshToken', newRefreshToken, refreshTokenOptions)
+    .send({accessToken: accessToken}); */
 })
 
 authRouter.post('/logout', refTokenMiddleware, async (req: Request, res: Response) => {
