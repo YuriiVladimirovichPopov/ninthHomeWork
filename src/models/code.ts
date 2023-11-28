@@ -1,3 +1,3 @@
 export type CodeType = {
-    code: string
-}
+  code: string;
+};

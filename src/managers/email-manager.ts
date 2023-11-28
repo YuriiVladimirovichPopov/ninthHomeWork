@@ -1,8 +1,7 @@
-import { emailAdapter } from '../adapters/email-adapter';
+import { emailAdapter } from "../adapters/email-adapter";
 
 export const emailManager = {
-    async sendEmail(email: string, code: string) {
-        
-       return emailAdapter.sendEmail(email, 'code', code )
-    }
-}
+  async sendEmail(email: string, code: string) {
+    return emailAdapter.sendEmail(email, "code", code);
+  },
+};
