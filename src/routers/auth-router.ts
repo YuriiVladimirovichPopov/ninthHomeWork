@@ -193,15 +193,15 @@ authRouter.post(
         deviceId,
         newLastActiveDate,
       );
-
-      return res.sendStatus(sendStatus.OK_200);
+     return res.status(sendStatus.OK_200)
+    .cookie('refreshToken', tokens.newRefreshToken, {httpOnly: true, secure: true})
+    .send({accessToken: tokens.accessToken})
+      
     } catch (error) {
       return res
         .status(sendStatus.INTERNAL_SERVER_ERROR_500)
         .send({ message: "Server error" });
-    } /* res.status(HTTP_STATUSES.OK_200)
-    .cookie('refreshToken', newRefreshToken, refreshTokenOptions)
-    .send({accessToken: accessToken}); */
+    } 
   },
 );
 
@@ -214,8 +214,9 @@ authRouter.post(
 
     try {
       await deviceRepository.deleteDeviceById(userId, deviceId);
-      res.clearCookie("refreshToken", { httpOnly: true, secure: true });
-      return res.sendStatus(sendStatus.NO_CONTENT_204);
+      
+      return res.sendStatus(sendStatus.NO_CONTENT_204)
+      //.clearCookie("refreshToken", { httpOnly: true, secure: true });
     } catch (error) {
       console.error(error);
       return res

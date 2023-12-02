@@ -12,34 +12,29 @@ export async function refTokenMiddleware(
 ) {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken)
-      return res
+    if (!refreshToken) return res
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "Refresh token not found" });
 
     const isValid = await authService.validateRefreshToken(refreshToken);
-    if (!isValid)
-      return res
+    if (!isValid) return res
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "Invalid refresh token" });
 
     const user = await usersRepository.findUserById(isValid.userId);
-    if (!user)
-      return res
+    if (!user) return res
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "User not found", isValid: isValid });
 
     const device = await deviceCollection.findOne({
       deviceId: isValid.deviceId,
     });
-    if (!device)
-      return res
+    if (!device) return res
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "No device" });
 
     const lastActiveDate = await jwtService.getLastActiveDate(refreshToken);
-    if (lastActiveDate !== device.lastActiveDate)
-      return res
+    if (lastActiveDate !== device.lastActiveDate) return res
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "Invalid refresh token version" });
     req.user = user;
