@@ -128,13 +128,13 @@ export const authService = {
   ): Promise<{ accessToken: string; newRefreshToken: string }> {
     try {
       const accessToken = Jwt.sign({ userId }, settings.accessTokenSecret1, {
-        expiresIn: "10s",
+        expiresIn: "3600s",
       });
 
       const newRefreshToken = Jwt.sign(
         { userId, deviceId },
         settings.refreshTokenSecret2,
-        { expiresIn: "20s" },
+        { expiresIn: "7200s" },
       );
 
       return { accessToken, newRefreshToken };

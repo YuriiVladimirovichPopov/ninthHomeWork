@@ -1,12 +1,12 @@
 import { PaginatedType } from "../routers/helpers/pagination";
 import { UserViewModel } from "../models/users/userViewModel";
 import { usersRepository } from "../repositories/users-repository";
-import { PaginatedUser } from "../models/users/paginatedQueryUser";
+import { Paginated } from "../models/users/paginatedQueryUser";
 
 export const QueryUserRepository = {
   async findAllUsers(
     pagination: PaginatedType,
-  ): Promise<PaginatedUser<UserViewModel[]>> {
+  ): Promise<Paginated<UserViewModel[]>> {
     return await usersRepository.findAllUsers(pagination);
   },
 

@@ -18,6 +18,7 @@ export const postsService = {
   },
   async createPost(data: PostsInputModel): Promise<PostsViewModel | null> {
     const blog = await blogsRepository.findBlogById(data.blogId);
+    
     if (!blog) return null;
 
     const newPost = {

@@ -3,7 +3,7 @@ import { usersCollection } from "../db/db";
 import { UsersMongoDbType } from "../types";
 import { UserPagination } from "../routers/helpers/pagination";
 import { UserViewModel } from "../models/users/userViewModel";
-import { PaginatedUser } from "../models/users/paginatedQueryUser";
+import { Paginated } from "../models/users/paginatedQueryUser";
 import { UserCreateViewModel } from "../models/users/createUser";
 
 export const usersRepository = {
@@ -19,7 +19,7 @@ export const usersRepository = {
 
   async findAllUsers(
     pagination: UserPagination,
-  ): Promise<PaginatedUser<UserViewModel[]>> {
+  ): Promise<Paginated<UserViewModel[]>> {
     let filter = {};
     if (pagination.searchEmailTerm && pagination.searchLoginTerm) {
       filter = {
@@ -45,7 +45,7 @@ export const usersRepository = {
     const totalCount: number = await usersCollection.countDocuments(filter);
     const pageCount: number = Math.ceil(totalCount / pagination.pageSize);
 
-    const res: PaginatedUser<UserViewModel[]> = {
+    const res: Paginated<UserViewModel[]> = {
       pagesCount: pageCount,
       page: pagination.pageNumber,
       pageSize: pagination.pageSize,

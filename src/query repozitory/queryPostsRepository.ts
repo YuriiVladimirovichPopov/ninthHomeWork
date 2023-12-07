@@ -19,7 +19,6 @@ export const queryPostRepository = {
     };
   },
 
-  //3         READY
   async findAllPostsByBlogId(
     blogId: string,
     pagination: PaginatedType,
@@ -28,7 +27,6 @@ export const queryPostRepository = {
     return this._findPostsByFilter(filter, pagination);
   },
 
-  //8       меняем(добавляем пагинацию)  READY
   async findAllPosts(
     pagination: PaginatedType,
   ): Promise<PaginatedPost<PostsViewModel>> {
@@ -80,7 +78,6 @@ export const queryPostRepository = {
     const result: WithId<WithId<CommentsMongoDbType>>[] =
       await commentsCollection
         .find(filter)
-
         .sort({ [pagination.sortBy]: pagination.sortDirection })
         .skip(pagination.skip)
         .limit(pagination.pageSize)

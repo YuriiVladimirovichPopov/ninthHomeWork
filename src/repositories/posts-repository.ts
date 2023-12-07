@@ -20,7 +20,6 @@ export const postsRepository = {
     };
   },
 
-  //10     READY
   async createdPostForSpecificBlog(
     model: PostsInputModel,
   ): Promise<PostsViewModel | null> {
@@ -63,7 +62,6 @@ export const postsRepository = {
     };
   },
 
-  //11       READY
   async updatePost(
     id: string,
     data: PostsInputModel,
@@ -75,16 +73,13 @@ export const postsRepository = {
     return foundPostById.matchedCount === 1;
   },
 
-  //12     READY
   async deletePost(id: string): Promise<PostsViewModel | boolean> {
     const foundPostById = await postsCollection.deleteOne({
       _id: new ObjectId(id),
     });
-
     return foundPostById.deletedCount === 1;
   },
 
-  //13      READY
   async deleteAllPosts(): Promise<boolean> {
     try {
       const deletedPosts = await postsCollection.deleteMany({});

@@ -26,7 +26,7 @@ export async function refTokenMiddleware(
         .status(sendStatus.UNAUTHORIZED_401)
         .send({ message: "User not found", isValid: isValid });
 
-    const device = await deviceCollection.findOne({
+    const device = await deviceCollection.findOne({    //TODO унести в репу
       deviceId: isValid.deviceId,
     });
     if (!device) return res

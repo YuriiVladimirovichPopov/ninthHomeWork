@@ -1,7 +1,5 @@
-import { DeviceViewModel } from "../models/devices/deviceViewModel";
 import { DeviceMongoDbType } from "../types";
 import { deviceCollection } from "../db/db";
-import { ObjectId } from "mongodb";
 
 export const deviceRepository = {
   async findDeviceByUser(deviceId: string): Promise<DeviceMongoDbType | null> {
